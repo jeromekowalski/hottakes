@@ -8,6 +8,10 @@ exports.createSauce = (req, res, next) => {
   const sauce = new Sauce({
       ...sauceObject,
       userId: req.auth.userId,
+      likes: 0,
+      dislikes: 0,
+      usersDisliked: [],
+      usersLiked: [],
       imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
   });
 
@@ -25,7 +29,7 @@ exports.modifySauces = (req, res, next) => {
   Sauce.findOne({_id: req.params.id})
       .then((sauce) => {
           if (sauce.userId != req.auth.userId) {
-              res.status(401).json({ message : 'Not authorized'});
+              res.status(403).json({ message : 'unauthorized request'});
           } else {
               Sauce.updateOne({ _id: req.params.id}, { ...sauceObject, _id: req.params.id})
               .then(() => res.status(200).json({message : 'Sauce modifié!'}))
@@ -40,7 +44,7 @@ exports.deleteSauce = (req, res, next) => {
   Sauce.findOne({ _id: req.params.id})
   .then(sauce => {
       if (sauce.userId != req.auth.userId) {
-          res.status(401).json({message: 'Not authorized'});
+        res.status(403).json({ message : 'unauthorized request'});
       } else {
           const filename = sauce.imageUrl.split('/images/')[1];
           fs.unlink(`images/${filename}`, () => {
@@ -83,7 +87,7 @@ exports.likeSauce = (req, res, next) => {
     like: req.body.like,
     dislikes: req.body.dislikes
   });
- // console.log('sauce', sauce)
+ console.log('sauce', sauce)
 
   //console.log('sauce', sauce.userId);
 
@@ -106,7 +110,7 @@ exports.likeSauce = (req, res, next) => {
   else if(req.body.like === 0) {
     Sauce.findOne({ _id: req.params.id })
       .then((sauce) => {
-        if (sauce.usersLiked.find(user => user === req.body.userId)) {
+        if (sauce.usersLiked.find(user => user === req.body.userId)) {  
           Sauce.updateOne({ _id: req.params.id }, {$inc: { likes: -1},  $pull: { usersLiked: req.body.userId }})
           .then(() => {
               res.status(200).json({message: 'like retiré !'});
@@ -114,7 +118,7 @@ exports.likeSauce = (req, res, next) => {
           .catch((error) => {res.status(400).json({error: error});});
         }
         else if (sauce.usersDisliked.find(user => user === req.body.userId)) {
-          Sauce.updateOne({ _id: req.params.id}, {$inc: { dislikes: -1}, $pull: { usersDisliked: req.body.usersDisliked }})
+          Sauce.updateOne({ _id: req.params.id}, {$inc: { dislikes: -1}, $pull: { usersDisliked: req.body.userId }})
           .then(() => {
               res.status(200).json({message: 'dislike retiré !'});
           })
