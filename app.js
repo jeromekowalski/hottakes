@@ -13,12 +13,14 @@ dotenv.config();
 // Helmet vous aide à sécuriser vos applications Express en définissant divers en-têtes HTTP 
 app.use(helmet({crossOriginResourcePolicy: false,}));
 
-// mongoose
+// Mongoose est un package qui facilite les interactions avec notre base de données MongoDB
 mongoose.connect(process.env.MONGO_DB,
   { useNewUrlParser: true,
     useUnifiedTopology: true })
   .then(() => console.log('Connexion à MongoDB réussie !'))
   .catch(() => console.log('Connexion à MongoDB échouée !'));
+
+// Express prend toutes les requêtes qui ont comme Content-Type  application/json  et met à disposition leur  body  
 app.use(express.json());
 
 // CORS

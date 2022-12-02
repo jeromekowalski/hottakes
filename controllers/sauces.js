@@ -1,10 +1,11 @@
 const Sauce = require('../models/Sauces');
 const fs = require('fs');
 
+//function createSauce
 exports.createSauce = (req, res, next) => {
   const sauceObject = JSON.parse(req.body.sauce);
-  delete sauceObject._id;
-  delete sauceObject._userId;
+  delete sauceObject._id; // supprimer l'id qui sera générer automatiquement par mongDB
+  delete sauceObject._userId; // supprimer l'userId car on va utilisé celui qui vient du token d'authentification
   const sauce = new Sauce({
       ...sauceObject,
       userId: req.auth.userId,
@@ -20,6 +21,7 @@ exports.createSauce = (req, res, next) => {
   .catch(error => { res.status(400).json( { error })})
 };
 
+//function modifySauces
 exports.modifySauces = (req, res, next) => {
   const sauceObject = req.file ? {
     ...JSON.parse(req.body.sauce),
@@ -28,7 +30,7 @@ exports.modifySauces = (req, res, next) => {
   delete sauceObject._userId;
   Sauce.findOne({_id: req.params.id})
       .then((sauce) => {
-          if (sauce.userId != req.auth.userId) {
+          if (sauce.userId != req.auth.userId) { // si l'userId est different que celui de notre token
               res.status(403).json({ message : 'unauthorized request'});
           } else {
               Sauce.updateOne({ _id: req.params.id}, { ...sauceObject, _id: req.params.id})
@@ -39,7 +41,7 @@ exports.modifySauces = (req, res, next) => {
       .catch((error) => {res.status(400).json({ error });});
 };
 
-
+//function deleteSauce
 exports.deleteSauce = (req, res, next) => {
   Sauce.findOne({ _id: req.params.id})
   .then(sauce => {
@@ -57,40 +59,24 @@ exports.deleteSauce = (req, res, next) => {
   .catch( error => {res.status(500).json({ error });});
 };
 
+//function getOneSauce
 exports.getOneSauce = (req, res, next) => {
   Sauce.findOne({_id: req.params.id})
     .then((sauces) => {res.status(200).json(sauces);})
     .catch((error) => {res.status(401).json({error: error});});
 };  
 
+
+//function getAllSauces
 exports.getAllSauces = (req, res, next) => {
   Sauce.find()
     .then((sauces) => {res.status(200).json(sauces);})
     .catch((error) => {res.status(400).json({error: error});});
 };
 
+
+//function likeSauce
 exports.likeSauce = (req, res, next) => {
-  console.log('req.body', req.body)
-  const body = req.body;
-  const sauceId = req.params.id;
-  const userId = req.body.userId;
-  const like = req.body.like;
-  const dislikes = req.body.dislikes;
-  const likeObject = req.body.like;
-  console.log('sauceId', sauceId);
-  console.log('userId', userId);
-  console.log('like', like);
-  console.log('dislikes', dislikes);
-   console.log('likeObject', likeObject)
-  const sauce = new Sauce({
-    userId: req.body.userId,
-    like: req.body.like,
-    dislikes: req.body.dislikes
-  });
- console.log('sauce', sauce)
-
-  //console.log('sauce', sauce.userId);
-
   if(req.body.like === 1){
     Sauce.updateOne({ _id: req.params.id }, {$inc: { likes: 1},  $push: { usersLiked: req.body.userId }})
     .then(() => {
@@ -98,7 +84,6 @@ exports.likeSauce = (req, res, next) => {
     })
     .catch((error) => {res.status(400).json({error: error});});
   } 
-
   else if(req.body.like === -1) {
     Sauce.updateOne({ _id: req.params.id }, {$inc: { dislikes: 1},  $push: { usersDisliked: req.body.userId }})
     .then(() => {
@@ -106,7 +91,6 @@ exports.likeSauce = (req, res, next) => {
     })
     .catch((error) => {res.status(400).json({error: error});});
   }
-  
   else if(req.body.like === 0) {
     Sauce.findOne({ _id: req.params.id })
       .then((sauce) => {
@@ -127,6 +111,5 @@ exports.likeSauce = (req, res, next) => {
       })
       .catch((error) => {res.status(400).json({error: error});});
   }
-  
 };
   
